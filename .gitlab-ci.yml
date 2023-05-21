@@ -21,6 +21,7 @@ django tests:
     - mkdir db
     - python manage.py migrate
     - python manage.py test
+
   tags:
     - docker
 
@@ -30,15 +31,12 @@ docker build:
   variables:
     DOCKER_HOST: tcp://docker:2375
     DOCKER_TLS_CERTDIR: ""
-    DOCKER_DRIVER: overlay2
   services: 
     - name: docker:dind
-      entrypoint: ["env", "-u", "DOCKER_HOST"]
-      command: ["dockerd-entrypoint.sh"]
   script:
     - docker login -u gitlab-ci-token -p ${CI_JOB_TOKEN} ${CI_REGISTRY}
-    - docker build --pull -t "$CI_REGISTRY_IMAGE${tag}" .
-    - docker push "$CI_REGISTRY_IMAGE${tag}"
+    - docker build -t ${CI_REGISTRY_IMAGE}:${tag} .
+    - docker push ${CI_REGISTRY_IMAGE}:${tag}
 
   tags:
     - docker
@@ -47,8 +45,9 @@ deploy to dev:
   stage: deploy
   script:
     - docker login -u ${CI_REGISTRY_USER} -p ${CI_REGISTRY_PASSWORD} ${CI_REGISTRY}
-    - docker pull "$CI_REGISTRY_IMAGE${tag}"
+    - docker pull ${CI_REGISTRY_IMAGE}:${tag}
     - docker rm -f blog || echo "no blog found"
-    - docker run --name blog -d -p 80:8000 -v db:code/db "$CI_REGISTRY_IMAGE${tag}"
+    - docker run --name blog -d -p 80:8000 -v db:code/db ${CI_REGISTRY_IMAGE}:${tag}
+
   tags:
     - dev-shell
